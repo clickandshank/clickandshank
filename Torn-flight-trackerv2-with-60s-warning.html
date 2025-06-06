@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Torn Flight Operations Console</title>
+  <link rel="icon" href="https://www.torn.com/favicon.ico" type="image/x-icon">
+  <style>
+    :root {
+      --bg-dark: #1a2a3a;
+      --bg-medium: #2a3d54;
+      --bg-light: #3a506b;
+      --primary-blue: #00bfff; /* Deep Sky Blue */
+      --accent-green: #00ff88; /* Bright Green for active states */
+      --text-light: #e0f2f7;
+      --text-medium: #a7d9ff;
+      --error-red: #ff6b6b;
+      --warning-yellow: #ffeb3b;
+      --border-blue: #0099ff;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Roboto', sans-serif;
+      background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-medium) 100%);
+      color: var(--text-light);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-x: hidden;
+    }
+
+    .console-container {
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 35px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      max-width: 600px;
+      width: 100%;
+      border: 2px solid var(--border-blue);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px); /* For Safari */
+      position: relative; /* For the subtle glow */
+      overflow: hidden; /* For the subtle glow */
+    }
+    /* Subtle glowing border effect */
+    .console-container::before {
+        content: '';
+        position: absolute;
+        top: -2px; left: -2px; right: -2px; bottom: -2px;
+        background: linear-gradient(45deg, var(--primary-blue), var(--accent-green));
+        z-index: -1;
+        filter: blur(10px);
+        opacity: 0.4;
+        border-radius: 17px;
+    }
+
+
+    h1 {
+      color: var(--primary-blue);
+      text-align: center;
+      margin-bottom: 25px;
+      font-size: 2.5em;
+      text-shadow: 0 0 10px var(--primary-blue);
+      letter-spacing: 1px;
+    }
+
+    .section-title {
+        font-size: 1.2em;
+        color: var(--text-medium);
+        margin-top: 25px;
+        margin-bottom: 15px;
+        border-bottom: 1px solid var(--bg-light);
+        padding-bottom: 5px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: var(--text-medium);
+    }
+
+    input[type="password"] {
+      width: calc(100% - 24px); /* Account for padding */
+      padding: 12px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-blue);
+      border-radius: 8px;
+      background-color: var(--bg-dark);
+      color: var(--text-light);
+      font-size: 1em;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.4);
+      transition: border-color 0.3s ease;
+    }
+    input[type="password"]:focus {
+        border-color: var(--accent-green);
+        outline: none;
+    }
+    input[type="password"]::placeholder {
+      color: #7abeff;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1em;
+      font-weight: bold;
+      transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    button.start {
+      background-color: #2ecc71; /* Emerald Green */
+      color: white;
+    }
+    button.start:hover {
+      background-color: #27ae60;
+      transform: translateY(-3px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    button.stop {
+      background-color: #e74c3c; /* Alizarin Red */
+      color: white;
+    }
+    button.stop:hover {
+      background-color: #c0392b;
+      transform: translateY(-3px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    button.clear {
+      background-color: #34495e; /* Wet Asphalt */
+      color: var(--text-light);
+      margin-top: 10px;
+    }
+    button.clear:hover {
+      background-color: #2c3e50;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    #status-display {
+      background-color: var(--bg-dark);
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 25px;
+      border: 1px solid var(--border-blue);
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      font-size: 1.2em;
+      color: var(--text-medium);
+      line-height: 1.5;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.4);
+    }
+
+    #timeRemaining, #landingTimeDisplay {
+        font-size: 1.6em;
+        font-weight: bold;
+        color: var(--accent-green);
+        text-shadow: 0 0 8px var(--accent-green);
+        margin-top: 5px;
+    }
+    #landingTimeDisplay {
+        font-size: 1.2em;
+        color: var(--primary-blue);
+        text-shadow: none;
+        margin-top: 5px;
+    }
+
+
+    #alertMessage {
+      background-color: var(--warning-yellow);
+      color: #333;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+      font-weight: bold;
+      font-size: 1.2em;
+      text-align: center;
+      border: 2px solid #e0a800;
+      animation: pulse 1s infinite alternate;
+      display: none; /* Hidden by default */
+    }
+
+    @keyframes pulse {
+      from { transform: scale(1); opacity: 1; }
+      to { transform: scale(1.02); opacity: 0.9; }
+    }
+
+    .info-text {
+      font-size: 0.9em;
+      color: #92bceb;
+      margin-top: 15px;
+      text-align: center;
+    }
+
+    .api-link {
+      display: block;
+      text-align: center;
+      margin-top: 25px;
+      color: var(--primary-blue);
+      text-decoration: none;
+      font-weight: bold;
+      transition: color 0.3s ease;
+    }
+    .api-link:hover {
+      color: #7abeff;
+      text-decoration: underline;
+    }
+
+    /* --- Manual Alarm Section --- */
+    .manual-alarm-section {
+        background-color: var(--bg-dark);
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 25px;
+        border: 1px solid var(--border-blue);
+        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.4);
+        text-align: center;
+    }
+    .manual-alarm-section p {
+        margin-bottom: 15px;
+        color: var(--text-medium);
+        font-size: 0.95em;
+    }
+    .manual-alarm-section button {
+        background-color: #6a5acd; /* Royal Purple */
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 0.9em;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+    }
+    .manual-alarm-section button:hover {
+        background-color: #8a7acd;
+        transform: translateY(-2px);
+    }
+    #copyStatus {
+        margin-top: 10px;
+        font-size: 0.85em;
+        color: var(--accent-green);
+    }
+
+    /* --- Simulated Map Styles --- */
+    .flight-map {
+      background-color: #0d1a2d; /* Dark background for map */
+      border: 1px solid var(--border-blue);
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 25px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .map-title {
+        font-size: 1.1em;
+        color: var(--text-medium);
+        text-align: center;
+        margin-bottom: 15px;
+    }
+
+    .flight-path-container {
+      width: 90%; /* Adjust width for visual padding */
+      height: 10px; /* Height of the path line */
+      background: linear-gradient(to right, #00ff88, #00bfff, #9900ff); /* Colorful path */
+      border-radius: 5px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .plane-icon {
+      position: absolute;
+      top: -15px; /* Adjust to center plane vertically on path */
+      left: 0%; /* Initial position */
+      transform: translateX(-50%); /* Center the plane horizontally */
+      font-size: 2em; /* Size of the airplane emoji */
+      line-height: 1;
+      animation: flypulse 1.5s infinite alternate; /* Subtle pulse animation for plane */
+      text-shadow: 0 0 10px var(--primary-blue);
+      transition: left 0.5s ease-out; /* Smooth movement */
+    }
+    .plane-icon::before {
+        content: '✈️'; /* Airplane emoji */
+        display: block;
+        transform: rotate(45deg); /* Rotate to face direction of travel */
+    }
+
+    .origin-label, .destination-label {
+      position: absolute;
+      top: 15px; /* Below the path */
+      font-size: 0.9em;
+      color: var(--text-medium);
+      font-weight: bold;
+      text-shadow: 0 0 5px rgba(0,0,0,0.5);
+    }
+    .origin-label { left: 0%; transform: translateX(-50%); }
+    .destination-label { right: 0%; transform: translateX(50%); }
+
+    /* Progress bar visual style */
+    .progress-bar-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        background-color: rgba(var(--primary-blue), 0.3); /* Transparent blue fill */
+        border-radius: 5px;
+        width: 0%; /* Will be controlled by JS */
+        transition: width 0.5s ease-out; /* Smooth fill */
+    }
+
+    /* Animation for plane pulse */
+    @keyframes flypulse {
+      from { opacity: 0.8; transform: translateX(-50%) scale(1); }
+      to { opacity: 1; transform: translateX(-50%) scale(1.05); }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      .button-group {
+        flex-direction: column;
+      }
+      .console-container {
+        padding: 20px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="console-container">
+    <h1>✈️ Torn Flight Operations Console</h1>
+
+    <div class="info-text">
+      Enter your Torn API key (Limited Access recommended) to monitor your flight status. Your key is securely stored only in your browser.
+    </div>
+
+    <label for="apiKey">Torn API Key:</label>
+    <input type="password" id="apiKey" placeholder="e.g., your_api_key_here">
+
+    <div class="button-group">
+      <button class="start" onclick="startMonitoring()">Start Monitoring</button>
+      <button class="stop" onclick="stopMonitoring()">Stop Monitoring</button>
+    </div>
+    <button class="clear" onclick="clearStorage()">Clear API Key</button>
+
+    <a class="api-link" href="https://www.torn.com/preferences.php#tab=api" target="_blank">
+      Go to Torn API Settings
+    </a>
+
+    <div id="status-display">
+      <span id="flightStatusText">Enter API key and click 'Start Monitoring'.</span>
+      <span id="timeRemaining"></span>
+      <span id="landingTimeDisplay"></span>
+    </div>
+
+    <div id="alertMessage">FLIGHT LANDING IMMINENT!</div>
+
+    <div class="section-title">Flight Path Overview</div>
+    <div class="flight-map">
+        <div class="map-title" id="mapTitle">Awaiting flight data...</div>
+        <div class="flight-path-container">
+            <div class="progress-bar-overlay" id="progressBar"></div>
+            <span class="plane-icon" id="planeIcon"></span>
+            <span class="origin-label" id="originLabel">Torn City</span>
+            <span class="destination-label" id="destinationLabel"></span>
+        </div>
+    </div>
+
+    <div class="manual-alarm-section">
+        <div class="section-title">Manual Alarm Sync</div>
+        <p>
+            For reliable off-page alerts, use your device's native clock app.
+            Copy the landing time below and paste it into a new alarm or timer.
+        </p>
+        <button onclick="copyLandingTime()">Copy Landing Time</button>
+        <div id="copyStatus"></div>
+    </div>
+
+  </div>
+
+  <script>
+    const API_URL = "https://api.torn.com/user/?selections=travel&key=";
+    const POLLING_INTERVAL_MS = 8 * 1000; // Poll every 8 seconds
+    const ALERT_THRESHOLD_SECONDS = 60; // Alert 1 minute (60 seconds) before landing
+
+    let monitoringInterval;
+    let flightLanded = false; // To prevent repeated alerts after landing
+    let initialTimeLeft = 0; // To store the initial total flight duration
+    let flightDepartureTime = 0; // Timestamp when the flight *actually* departed
+    let currentLandingTimeMs = 0; // Stores the calculated landing time in milliseconds
+
+    const apiKeyInput = document.getElementById('apiKey');
+    const statusDisplayDiv = document.getElementById('status-display');
+    const flightStatusTextSpan = document.getElementById('flightStatusText');
+    const timeRemainingSpan = document.getElementById('timeRemaining');
+    const landingTimeDisplaySpan = document.getElementById('landingTimeDisplay'); // New element
+    const alertMessageDiv = document.getElementById('alertMessage');
+    const planeIcon = document.getElementById('planeIcon');
+    const progressBar = document.getElementById('progressBar');
+    const mapTitle = document.getElementById('mapTitle');
+    const originLabel = document.getElementById('originLabel');
+    const destinationLabel = document.getElementById('destinationLabel');
+    const copyStatusDiv = document.getElementById('copyStatus'); // New element
+
+    // --- Page Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedKey = localStorage.getItem('tornApiKey');
+      if (savedKey) {
+        apiKeyInput.value = savedKey;
+        flightStatusTextSpan.textContent = "API key loaded. Click 'Start Monitoring'.";
+      } else {
+        flightStatusTextSpan.textContent = "Enter your API key to begin.";
+      }
+
+      // Request notification permission early
+      if (Notification.permission === "default") {
+          Notification.requestPermission();
+      }
+      updateMapDisplay(false); // Initialize map to dormant state
+      updateManualAlarmSection(false); // Hide until flight detected
+    });
+
+    // --- Core Functions ---
+
+    async function checkFlightStatus() {
+      const apiKey = apiKeyInput.value.trim();
+      if (!apiKey) {
+        flightStatusTextSpan.textContent = "Please enter your API key.";
+        timeRemainingSpan.textContent = "";
+        landingTimeDisplaySpan.textContent = "";
+        updateMapDisplay(false);
+        updateManualAlarmSection(false);
+        stopMonitoring();
+        return;
+      }
+
+      localStorage.setItem('tornApiKey', apiKey);
+
+      try {
+        const response = await fetch(API_URL + apiKey);
+        const data = await response.json();
+
+        if (data.error) {
+          flightStatusTextSpan.innerHTML = `<span style="color: var(--error-red);">API Error: ${data.error.error} (Code: ${data.error.code})</span>`;
+          timeRemainingSpan.textContent = "";
+          landingTimeDisplaySpan.textContent = "";
+          updateMapDisplay(false);
+          updateManualAlarmSection(false);
+          stopMonitoring();
+          return;
+        }
+
+        const travelData = data.travel;
+
+        if (travelData.arrived) {
+          if (!flightLanded) {
+            flightStatusTextSpan.textContent = "You have landed!";
+            timeRemainingSpan.textContent = "Welcome back to Torn City!";
+            landingTimeDisplaySpan.textContent = "";
+            alertMessageDiv.style.display = 'none';
+            // playAlertSound(); // Uncomment if you add a sound
+            flightLanded = true;
+            updateMapDisplay(false); // Reset map
+            updateManualAlarmSection(false); // Hide manual alarm section
+          }
+          stopMonitoring(); // Stop monitoring once landed
+          return;
+        }
+
+        if (travelData.time_left > 0) {
+          flightLanded = false; // Reset landed flag if a new flight starts
+          const timeLeft = travelData.time_left; // Time left in seconds
+          const destination = travelData.destination;
+
+          // If this is a new flight or app just started, capture initial time and departure timestamp
+          if (initialTimeLeft === 0 || travelData.departed !== flightDepartureTime) {
+             flightDepartureTime = travelData.departed; // Torn API uses Unix timestamp (seconds)
+             const currentUnixTime = Date.now() / 1000; // Current time in Unix seconds
+             initialTimeLeft = (currentUnixTime - travelData.departed) + travelData.time_left;
+             console.log("New flight detected. Initial duration:", initialTimeLeft, "seconds");
+          }
+
+          // Calculate actual landing time in milliseconds
+          currentLandingTimeMs = Date.now() + (timeLeft * 1000);
+          const landingDate = new Date(currentLandingTimeMs);
+
+          const minutes = Math.floor(timeLeft / 60);
+          const seconds = timeLeft % 60;
+
+          flightStatusTextSpan.textContent = `Destination: ${destination}`;
+          timeRemainingSpan.textContent = `Time Remaining: ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
+          landingTimeDisplaySpan.textContent = `Landing at: ${landingDate.toLocaleTimeString()} ${landingDate.toLocaleDateString()}`;
+
+          // Update map display
+          updateMapDisplay(true, destination, timeLeft, initialTimeLeft);
+          updateManualAlarmSection(true); // Show manual alarm section
+
+          if (timeLeft <= ALERT_THRESHOLD_SECONDS) {
+            alertMessageDiv.style.display = 'block';
+            triggerNotification();
+          } else {
+            alertMessageDiv.style.display = 'none';
+          }
+        } else {
+          flightStatusTextSpan.textContent = "You are not currently flying.";
+          timeRemainingSpan.textContent = "";
+          landingTimeDisplaySpan.textContent = "";
+          alertMessageDiv.style.display = 'none';
+          flightLanded = false;
+          initialTimeLeft = 0; // Reset initial time if not flying
+          flightDepartureTime = 0;
+          currentLandingTimeMs = 0;
+          updateMapDisplay(false); // Reset map
+          updateManualAlarmSection(false); // Hide manual alarm section
+        }
+
+      } catch (error) {
+        flightStatusTextSpan.innerHTML = `<span style="color: var(--error-red);">Connection Error. Please check your network or API key validity.</span>`;
+        timeRemainingSpan.textContent = "";
+        landingTimeDisplaySpan.textContent = "";
+        console.error("Fetch error:", error);
+        updateMapDisplay(false);
+        updateManualAlarmSection(false);
+        stopMonitoring();
+      }
+    }
+
+    // --- Map Display Update ---
+    function updateMapDisplay(isFlying, destination = '', timeLeft = 0, totalDuration = 0) {
+        const mapDiv = document.querySelector('.flight-map');
+        if (isFlying && totalDuration > 0) {
+            mapDiv.style.display = 'block'; // Ensure map is visible
+            mapTitle.textContent = `Current Flight: Torn City ➡️ ${destination}`;
+            destinationLabel.textContent = destination;
+            destinationLabel.style.display = 'inline';
+            originLabel.style.display = 'inline';
+            planeIcon.style.display = 'block';
+
+            // Calculate progress percentage
+            const progress = ((totalDuration - timeLeft) / totalDuration) * 100;
+            const boundedProgress = Math.max(0, Math.min(100, progress)); // Ensure it's between 0 and 100
+
+            planeIcon.style.left = `${boundedProgress}%`;
+            progressBar.style.width = `${boundedProgress}%`;
+        } else {
+            mapDiv.style.display = 'none'; // Hide map if not flying
+            mapTitle.textContent = "Awaiting flight data...";
+            destinationLabel.textContent = "";
+            destinationLabel.style.display = 'none';
+            originLabel.style.display = 'none';
+            planeIcon.style.display = 'none';
+            planeIcon.style.left = '0%'; // Reset plane position
+            progressBar.style.width = '0%'; // Reset progress bar
+        }
+    }
+
+    // --- Manual Alarm Section Display ---
+    function updateManualAlarmSection(isFlying) {
+    const manualAlarmSection = document.querySelector('.manual-alarm-section');
+    manualAlarmSection.style.display = isFlying ? 'block' : 'none';
+    copyStatusDiv.textContent = "";
+
+    if (isFlying) {
+        startCountdownToLanding(currentLandingTimeMs);
+    } else {
+        clearInterval(window.landingTimerInterval);
+        document.getElementById("copyStatus").innerText = "";
+    }
+}
+
+
+    // --- Control Functions ---
+    function startMonitoring() {
+      if (monitoringInterval) {
+        flightStatusTextSpan.textContent = "Monitoring already active.";
+        timeRemainingSpan.textContent = "";
+        landingTimeDisplaySpan.textContent = "";
+        return;
+      }
+      const apiKey = apiKeyInput.value.trim();
+      if (!apiKey) {
+        flightStatusTextSpan.textContent = "Please enter your API key before starting.";
+        timeRemainingSpan.textContent = "";
+        landingTimeDisplaySpan.textContent = "";
+        return;
+      }
+
+      flightStatusTextSpan.textContent = "Starting monitoring...";
+      timeRemainingSpan.textContent = "";
+      landingTimeDisplaySpan.textContent = "";
+      checkFlightStatus(); // Initial check immediately
+      monitoringInterval = setInterval(checkFlightStatus, POLLING_INTERVAL_MS);
+      console.log("Monitoring started.");
+    }
+
+    function stopMonitoring() {
+      if (monitoringInterval) {
+        clearInterval(monitoringInterval);
+        monitoringInterval = null;
+        flightStatusTextSpan.textContent = "Monitoring stopped.";
+        timeRemainingSpan.textContent = "";
+        landingTimeDisplaySpan.textContent = "";
+        alertMessageDiv.style.display = 'none';
+        initialTimeLeft = 0; // Reset state for next flight
+        flightDepartureTime = 0;
+        currentLandingTimeMs = 0;
+        updateMapDisplay(false);
+        updateManualAlarmSection(false);
+        console.log("Monitoring stopped.");
+      }
+    }
+
+    function clearStorage() {
+      localStorage.removeItem('tornApiKey');
+      apiKeyInput.value = '';
+      flightStatusTextSpan.textContent = "API key cleared. Enter a new key to start.";
+      timeRemainingSpan.textContent = "";
+      landingTimeDisplaySpan.textContent = "";
+      stopMonitoring();
+      alert("API key cleared from browser storage.");
+    }
+
+    // --- Notification and Sound ---
+    function triggerNotification() {
+      if (Notification.permission === "granted") {
+        new Notification("Torn Flight Alert!", {
+          body: "Your flight is landing in less than 1 minute!",
+          icon: "https://www.torn.com/images/v2/icons/travel_icon.png",
+          tag: "torn-flight-alert", // Groups notifications
+          renotify: true
+        });
+      } else if (Notification.permission === "default") { // Ask again if default
+        Notification.requestPermission().then(permission => {
+          if (permission === "granted") {
+            new Notification("Torn Flight Alert!", {
+              body: "Your flight is landing in less than 1 minute!"
+            });
+          }
+        });
+      }
+    }
+
+    // --- Manual Alarm Sync Functionality ---
+    async function copyLandingTime() {
+        if (currentLandingTimeMs === 0) {
+            copyStatusDiv.textContent = "No flight data to copy.";
+            copyStatusDiv.style.color = "var(--error-red)";
+            return;
+        }
+
+        const landingDate = new Date(currentLandingTimeMs);
+        // Format for easy manual entry (e.g., "10:35 PM, 14 June")
+        const timeToCopy = landingDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', ' + landingDate.toLocaleDateString([], { month: 'long', day: 'numeric' });
+
+        try {
+            await navigator.clipboard.writeText(timeToCopy);
+            copyStatusDiv.textContent = "Landing time copied!";
+            copyStatusDiv.style.color = "var(--accent-green)";
+            console.log("Landing time copied:", timeToCopy);
+        } catch (err) {
+            copyStatusDiv.textContent = "Failed to copy time.";
+            copyStatusDiv.style.color = "var(--error-red)";
+            console.error('Failed to copy text: ', err);
+            // Fallback for browsers that don't support clipboard.writeText (older or some mobile)
+            // You could create a temporary textarea, select its content, and execCommand('copy')
+        }
+        setTimeout(() => { copyStatusDiv.textContent = ""; copyStatusDiv.style.color = ""; }, 3000);
+    }
+
+
+    // Optional: Play a sound (you'll need to provide an audio file path, e.g., 'alert.mp3')
+    // function playAlertSound() {
+    //     const audio = new Audio('path/to/your/alert.mp3'); // Replace with your sound file
+    //     audio.play().catch(e => console.error("Error playing sound:", e));
+    // }
+  
+function startCountdownToLanding(landingTime) {
+    clearInterval(window.landingTimerInterval);
+    const statusEl = document.getElementById("copyStatus");
+    let warned = false;
+
+    function updateCountdown() {
+        const now = Date.now();
+        const diff = Math.floor((landingTime - now) / 1000);
+
+        if (diff <= 0) {
+            statusEl.textContent = "🛬 Flight should have landed!";
+            statusEl.style.color = "var(--accent-green)";
+            clearInterval(window.landingTimerInterval);
+        } else {
+            const mins = Math.floor(diff / 60).toString().padStart(2, '0');
+            const secs = (diff % 60).toString().padStart(2, '0');
+            statusEl.textContent = `⏱ Countdown: ${mins}:${secs}`;
+            statusEl.style.color = "#00bfff";
+
+            if (diff <= 60 && !warned) {
+                triggerNotification();
+                playBeep();
+                warned = true;
+            }
+        }
+    }
+
+    updateCountdown();
+    window.landingTimerInterval = setInterval(updateCountdown, 1000);
+}
+
+function playBeep() {
+    const beep = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
+    beep.play().catch(e => console.error("Beep failed:", e));
+}
+
+</script>
+
+</body>
+</html>
